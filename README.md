@@ -81,7 +81,7 @@ python nyx_net_payload_executor.py /tmp/workdir/corpus/crash_reproducable/cnt_10
 ### ProfuzzBench
 
 To reproduce the evaulation and results from the paper, you can use the scripts and tools located in `profuzzbench-nyx/`.
-More details on that can be found [here](profuzzbench-nyx/README.md).
+More details on that can be found [here](https://github.com/RUB-SysSec/nyx-net-profuzzbench).
 
 ### License
 
