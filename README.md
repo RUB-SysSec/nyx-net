@@ -1,6 +1,6 @@
 # Nyx-Net: Network Fuzzing with Incremental Snapshots
 
-<a href="https://www.usenix.org/system/files/sec21-schumilo.pdf"> <img align="right" width="200"  src="paper.png"> </a>
+<a href="https://arxiv.org/abs/2111.03013"> <img align="right" width="200"  src="paper.png"> </a>
 
 Nyx-Net is fast full-VM snapshot fuzzer for complex network based targets. It's built upon [kAFL](https://github.com/RUB-SysSec/kAFL), [Redqueen](https://github.com/RUB-SysSec/redqueen) and [Nyx](https://github.com/RUB-SysSec/nyx). The approach is described in more detail in our [paper](https://arxiv.org/pdf/2111.03013.pdf).
 
