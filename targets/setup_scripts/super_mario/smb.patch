@@ -1,0 +1,550 @@
+diff --git a/README.md b/README.md
+index 3982710..95c6f1f 100644
+--- a/README.md
++++ b/README.md
+@@ -1,3 +1,5 @@
++This is the Super Mario port found at https://github.com/MitchellSternke/SuperMarioBros-C/ adapted for the IJON demo.
++
+ SuperMarioBros-C
+ ================
+ 
+@@ -35,7 +37,7 @@ This should create the executable `smbc` in the `build` directory.
+ Running
+ -------
+ 
+-This requires an *unmodified* copy of the `Super Mario Bros. (JU) (PRG0) [!].nes` ROM to run. Without this, the game won't have any graphics, since the CHR data is used for rendering. By default, the program will look for this file in the current working directory, but this can also be configured in `smbc.conf`.
++This requires an *unmodified* copy of the `Super Mario Bros. (JU) (PRG0) [!].nes` ROM to run. Without this, the game won't have any graphics, since the CHR data is used for rendering. By default, the program will look for this file in the current working directory, but this can also be configured in `smbc.conf`.  (md5sum 811b027eaf99c2def7b933c5208636de)
+ 
+ Configuration
+ -------------
+diff --git a/source/Configuration.cpp b/source/Configuration.cpp
+index 8d99ef7..a3db4e9 100644
+--- a/source/Configuration.cpp
++++ b/source/Configuration.cpp
+@@ -20,7 +20,7 @@ std::list<ConfigurationOption*> Configuration::configurationOptions = {
+  * Whether audio is enabled or not.
+  */
+ BasicConfigurationOption<bool> Configuration::audioEnabled(
+-    "audio.enabled", true
++    "audio.enabled", false
+ );
+ 
+ /**
+@@ -69,7 +69,7 @@ BasicConfigurationOption<bool> Configuration::scanlinesEnabled(
+  * Whether vsync is enabled for video.
+  */
+ BasicConfigurationOption<bool> Configuration::vsyncEnabled(
+-    "video.vsync", true
++    "video.vsync", false
+ );
+ 
+ ConfigurationOption::ConfigurationOption(
+diff --git a/source/Main.cpp b/source/Main.cpp
+index 8ad7af3..8a5b643 100644
+--- a/source/Main.cpp
++++ b/source/Main.cpp
+@@ -10,6 +10,18 @@
+ #include "Configuration.hpp"
+ #include "Constants.hpp"
+ 
++#include<stdio.h>
++
++#ifdef NYX
++extern "C" {
++#include "libnyx.h"
++}
++#endif
++
++extern "C" {
++//#include "nyx.h"
++}
++
+ uint8_t* romImage;
+ static SDL_Window* window;
+ static SDL_Renderer* renderer;
+@@ -18,6 +30,11 @@ static SDL_Texture* scanlineTexture;
+ static SMBEngine* smbEngine = nullptr;
+ static uint32_t renderBuffer[RENDER_WIDTH * RENDER_HEIGHT];
+ 
++
++void crash(uint8_t level, uint64_t world_pos);
++
++static int level = 0;
++
+ /**
+  * Load the Super Mario Bros. ROM image.
+  */
+@@ -57,7 +74,7 @@ static void audioCallback(void* userdata, uint8_t* buffer, int len)
+ /**
+  * Initialize libraries for use.
+  */
+-static bool initialize()
++static bool initialize(bool video)
+ {
+     // Load the configuration
+     //
+@@ -69,12 +86,13 @@ static bool initialize()
+         return false;
+     }
+ 
+-    // Initialize SDL
+-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
+-    {
+-        std::cout << "SDL_Init() failed during initialize(): " << SDL_GetError() << std::endl;
+-        return false;
+-    }
++    if(video){
++        // Initialize SDL
++        if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
++        {
++            std::cout << "SDL_Init() failed during initialize(): " << SDL_GetError() << std::endl;
++            return false;
++      	}
+ 
+     // Create the window
+     window = SDL_CreateWindow(APP_TITLE,
+@@ -143,6 +161,7 @@ static bool initialize()
+         // Start playing audio
+         SDL_PauseAudio(0);
+     }
++		}
+ 
+     return true;
+ }
+@@ -162,117 +181,338 @@ static void shutdown()
+     SDL_Quit();
+ }
+ 
+-static void mainLoop()
++uint8_t keys[6] = {0};
++
++static void mainLoop(bool video, bool trace)
+ {
+     SMBEngine engine(romImage);
+     smbEngine = &engine;
+     engine.reset();
+ 
+     bool running = true;
+-    int progStartTime = SDL_GetTicks();
++    int progStartTime = 0;
++		if(video) { progStartTime = SDL_GetTicks(); }
+     int frame = 0;
+-    while (running)
+-    {
+-        SDL_Event event;
+-        while (SDL_PollEvent(&event))
+-        {
+-            switch (event.type)
+-            {
+-            case SDL_QUIT:
+-                running = false;
+-                break;
+-            case SDL_WINDOWEVENT:
+-                switch (event.window.event)
+-                {
+-                case SDL_WINDOWEVENT_CLOSE:
+-                    running = false;
+-                    break;
+-                }
+-                break;
+-
+-            default:
+-                break;
+-            }
+-        }
+-
+-        const Uint8* keys = SDL_GetKeyboardState(NULL);
+-        Controller& controller1 = engine.getController1();
+-        controller1.setButtonState(BUTTON_A, keys[SDL_SCANCODE_X]);
+-        controller1.setButtonState(BUTTON_B, keys[SDL_SCANCODE_Z]);
+-        controller1.setButtonState(BUTTON_SELECT, keys[SDL_SCANCODE_BACKSPACE]);
+-        controller1.setButtonState(BUTTON_START, keys[SDL_SCANCODE_RETURN]);
+-        controller1.setButtonState(BUTTON_UP, keys[SDL_SCANCODE_UP]);
+-        controller1.setButtonState(BUTTON_DOWN, keys[SDL_SCANCODE_DOWN]);
+-        controller1.setButtonState(BUTTON_LEFT, keys[SDL_SCANCODE_LEFT]);
+-        controller1.setButtonState(BUTTON_RIGHT, keys[SDL_SCANCODE_RIGHT]);
+-
+-        if (keys[SDL_SCANCODE_R])
+-        {
+-            // Reset
+-            engine.reset();
+-        }
+-        if (keys[SDL_SCANCODE_ESCAPE])
+-        {
+-            // quit
+-            running = false;
+-            break;
+-        }
+-        if (keys[SDL_SCANCODE_F])
+-        {
+-            SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+-        }
+-
+-        engine.update();
+-        engine.render(renderBuffer);
++		int sleep = 100;
++		int enter = 0;
+ 
+-        SDL_UpdateTexture(texture, NULL, renderBuffer, sizeof(uint32_t) * RENDER_WIDTH);
+-
+-        SDL_RenderClear(renderer);
+-
+-        // Render the screen
+-        SDL_RenderSetLogicalSize(renderer, RENDER_WIDTH, RENDER_HEIGHT);
+-        SDL_RenderCopy(renderer, texture, NULL, NULL);
+-
+-        // Render scanlines
+-        //
+-        if (Configuration::getScanlinesEnabled())
+-        {
+-            SDL_RenderSetLogicalSize(renderer, RENDER_WIDTH * 3, RENDER_HEIGHT * 3);
+-            SDL_RenderCopy(renderer, scanlineTexture, NULL, NULL);
+-        }
++		uint64_t last_world_pos = 0xffffffff;
++		uint64_t idle = 0;
++		bool hammertime = false;
+ 
+-        SDL_RenderPresent(renderer);
++    while (running || video)
++    {
++				if(video){
++					SDL_Event event;
++					while (SDL_PollEvent(&event))
++					{
++							switch (event.type)
++							{
++							case SDL_QUIT:
++									running = false;
++									break;
++							case SDL_WINDOWEVENT:
++									switch (event.window.event)
++									{
++									case SDL_WINDOWEVENT_CLOSE:
++											running = false;
++											break;
++									}
++									break;
++
++							default:
++									break;
++							}
++					}
++				}
++
++				if(sleep == 0){
++					if(enter==0){
++						enter = 1;
++						engine.writeData(0x0760, level);
++
++						/* <<---- */
++#ifdef NYX
++            nyx_init();
++#endif
++
++					} else {
++						uint8_t ch;
++						if(read(STDIN_FILENO, &ch, 1) <1 ){
++							running = false;
++							if(!video){
++								break;
++							}
++						}else{
++							sleep = ch;
++							keys[0] = !keys[0];
++						}
++					}
++				} else {
++					sleep --;
++				}
++
++				Controller& controller1 = engine.getController1();
++
++				if(running){
++					controller1.setButtonState(BUTTON_A,			keys[0] && hammertime);
++					controller1.setButtonState(BUTTON_B,			enter && sleep && 1);
++					controller1.setButtonState(BUTTON_RIGHT,	enter && sleep && 1);
++					controller1.setButtonState(BUTTON_START, enter);
++					engine.update();
++				}
++
++				if(video){
++
++					const Uint8* sdl_keys = SDL_GetKeyboardState(NULL);
++					if (sdl_keys[SDL_SCANCODE_ESCAPE])
++					{
++							// quit
++							running = false;
++							break;
++					}
++					engine.render(renderBuffer);
++
++					SDL_UpdateTexture(texture, NULL, renderBuffer, sizeof(uint32_t) * RENDER_WIDTH);
++
++					SDL_RenderClear(renderer);
++
++					// Render the screen
++					SDL_RenderSetLogicalSize(renderer, RENDER_WIDTH, RENDER_HEIGHT);
++					SDL_RenderCopy(renderer, texture, NULL, NULL);
++
++					// Render scanlines
++					//
++					if (Configuration::getScanlinesEnabled())
++					{
++							SDL_RenderSetLogicalSize(renderer, RENDER_WIDTH * 3, RENDER_HEIGHT * 3);
++							SDL_RenderCopy(renderer, scanlineTexture, NULL, NULL);
++					}
++
++					SDL_RenderPresent(renderer);
+ 
+         /**
+          * Ensure that the framerate stays as close to the desired FPS as possible. If the frame was rendered faster, then delay. 
+          * If the frame was slower, reset time so that the game doesn't try to "catch up", going super-speed.
+          */
+-        int now = SDL_GetTicks();
+-        int delay = progStartTime + int(double(frame) * double(MS_PER_SEC) / double(Configuration::getFrameRate())) - now;
+-        if(delay > 0) 
+-        {
+-            SDL_Delay(delay);
+-        }
+-        else 
+-        {
+-            frame = 0;
+-            progStartTime = now;
+-        }
++					int now = SDL_GetTicks();
++					int delay = progStartTime + int(double(frame) * double(MS_PER_SEC) / double(Configuration::getFrameRate())) - now;
++					if(delay > 0) 
++					{
++							SDL_Delay(delay);
++					}
++					else 
++					{
++							frame = 0;
++							progStartTime = now;
++					}
++				}
++
++				uint64_t screen  = (uint64_t)engine.readData(0x6d);
++				uint64_t pos  = (uint64_t)engine.readData(0x86);
++				uint64_t world_pos = screen*255 + pos;
++
++				uint64_t pos_y = ((uint64_t)engine.readData(0x00CE))*((uint64_t)engine.readData(0x00B5));
++				if(trace && frame%4 == 0){
++					//hprintf("trace %d,%d", world_pos, pos_y);
++				}
++				//if(engine.readData(0x1d) == 0x0){ //on a solid surface
++#ifdef NYX
++				ijon_max(pos_y/16, world_pos);
++				crash(level, world_pos);
++#endif
++
++				if(engine.readData(0x07A0) > 0){ //skip pre level timer
++					engine.writeData(0x07a0, 0);
++				}
++				if(engine.readData(0x0e) == 0x0b){ /*hprintf("Mario has died [0]\n");*/ return;} //exit if dead
++
++				if(engine.readData(0xb5) > 0x01){ /*hprintf("Mario has died [1]\n");*/ return;} //exit if falling below screen
++				if(world_pos > 44 && !hammertime){
++					hammertime = true;
++				}
++				if(world_pos == last_world_pos){
++					idle += 1;
++				}else{ idle = 0; last_world_pos = world_pos; }
++				if(hammertime && idle > 4){/*hprintf("Mario is a lazy bastard\n");*/ return;} //lazy bastard
++
++
++				assert(engine.readData(0x1d) != 0x03); // Sliding down flagpole
++				//assert(engine.readData(0x0e) != 0x02); // Entering reversed-L pipe
++				//assert(engine.readData(0x1E) != 0x23 && engine.readData(0x23) != 0x23); // bowser killed
++
++
+         frame++;
+     }
+ }
+ 
+ int main(int argc, char** argv)
+ {
+-    if (!initialize())
++		//ijon_map_set(0);
++		bool video = false;
++		bool trace = false;
++		if(argc > 3){
++			printf("usage: smbc level {trace|video}? < input\n");
++			exit(0);
++		}
++		if(argc > 2 && strcmp(argv[2],"video")==0){
++			video = true;
++		}
++		if(argc > 2 && strcmp(argv[2],"trace")==0){
++			trace = true;
++		}
++
++		printf("got argc %d\n", argc);
++		assert(argc > 1);
++
++		level = atoi(argv[1]);
++		printf("run level %d\n", level);
++
++		if(level >= 36 || level < 0){
++			printf("ERROR: invalid level...\n");
++			printf("===== Levels: =====\n");
++			printf("0:      Level 1-1\n");
++			printf("1:  Pre Level 1-2\n");
++			printf("2:      Level 1-2\n");
++			printf("3:      Level 1-3\n");
++			printf("4:      Level 1-4\n");
++			printf("5:      Level 2-1\n");
++			printf("6:  Pre Level 2-2\n");
++			printf("7:      Level 2-2\n");
++			printf("8:      Level 2-3\n");
++			printf("9:      Level 2-4\n");
++			printf("10:     Level 3-1\n");
++			printf("11:     Level 3-2\n");
++			printf("12:     Level 3-3\n");
++			printf("13:     Level 3-4\n");
++			printf("14:     Level 4-1\n");
++			printf("15: Pre Level 4-2\n");
++			printf("16:     Level 4-2\n");
++			printf("17:     Level 4-3\n");
++			printf("18:     Level 4-4\n");
++			printf("19:     Level 5-1\n");
++			printf("20:     Level 5-2\n");
++			printf("21:     Level 5-3\n");
++			printf("22:     Level 5-4\n");
++			printf("23:     Level 6-1\n");
++			printf("24:     Level 6-2\n");
++			printf("25:     Level 6-3\n");
++			printf("26:     Level 6-4\n");
++			printf("27:     Level 7-1\n");
++			printf("28: Pre Level 7-2\n");
++			printf("29:     Level 7-2\n");
++			printf("30:     Level 7-3\n");
++			printf("31:     Level 7-4\n");
++			printf("32:     Level 8-1\n");
++			printf("33:     Level 8-2\n");
++			printf("34:     Level 8-3\n");
++			printf("35:     Level 8-4\n");
++			exit(0);
++		}
++
++		
++
++    if (!initialize(video))
+     {
+         std::cout << "Failed to initialize. Please check previous error messages for more information. The program will now exit.\n";
+         return -1;
+     }
+ 
+-    mainLoop();
+ 
+-    shutdown();
++		printf("running mainLoop\n");
++    mainLoop(video, trace);
++		printf("done mainLoop\n");
++		if(video)	{
++			shutdown();
++		}
+ 
+     return 0;
+ }
++
++void crash(uint8_t level, uint64_t world_pos){
++	switch(level){
++		case 0: // 1-1 
++			break;
++		case 1: // invalid level
++			abort(); 
++			break;
++		case 2: // 1-2
++			assert(world_pos < 0xbc7);
++			break;
++		case 3: // 1-3 
++			break;
++		case 4: // 1-4
++			assert(world_pos < 0x8d0);
++			break;
++		case 5: // 2-1
++			break;
++		case 6: // invalid level
++			abort(); 
++			break;
++		case 7: // 2-2
++			assert(world_pos < 0xbc7);
++			break;
++		case 8: // 2-3
++			break;
++		case 9: // 2-4
++			assert(world_pos < 0x8d0);
++			break;
++		case 10: // 3-1
++		case 11: // 3-2
++		case 12: // 3-3
++			break;
++		case 13: 
++			assert(world_pos < 0x8d0);
++			break;
++		case 14: // 4-1
++			break;
++		case 15: // invalid level
++			abort(); 
++			break;
++		case 16: // 4-2
++			assert(world_pos < 0xb97);
++			break;
++		case 17: // 4-3
++			break;
++		case 18: // 4-4
++			assert(world_pos < 0x8f9);
++			break;
++		case 19: // 5-1
++		case 20: // 5-2
++		case 21: // 5-3
++			break;
++		case 22: // 5-4
++			assert(world_pos < 0x8d0);
++			break;
++		case 23: // 6-1
++		case 24: // 6-2
++		case 25: // 6-3
++			break;
++		case 26: // 6-4
++			assert(world_pos < 0x8d0);
++			break;
++		case 27: // 7-1
++			break;
++		case 28: // invalid level
++			abort(); 
++			break;
++		case 29: // 7-2
++			assert(world_pos < 0xbc7);
++			break;
++		case 30: // 7-3
++			break;
++		case 31: // 7-4
++			assert(world_pos < 0xcce);
++			break;
++		case 32: // 8-1
++		case 33: // 8-2
++		case 34: // 8-3
++			break;
++		case 35: // invalid level
++			abort(); 
++			break;
++		
++		default: 
++			break;
++	}
++}
+diff --git a/source/SMB/SMBEngine.hpp b/source/SMB/SMBEngine.hpp
+index af30172..472935f 100644
+--- a/source/SMB/SMBEngine.hpp
++++ b/source/SMB/SMBEngine.hpp
+@@ -62,7 +62,7 @@ public:
+      */
+     void update();
+ 
+-private:
++//private:
+     // NES Emulation subsystems:
+     APU* apu;
+     PPU* ppu;

@@ -1,0 +1,18 @@
+220 Chris Sanders FTP Server
+331 Password required for csanders.
+230 User csanders logged in.
+215 UNIX Type: L8
+211-Extensions supported:
+ CLNT
+ MDTM
+ PASV
+ REST STREAM
+ SIZE
+211 End.
+200 "FlashFXP 3.4.0.1145" noted.
+250 CWD command successful. "/" is current directory.
+257 "/" is current directory.
+200 Type set to I.
+213 4980924
+227 Entering Passive Mode (192,168,0,193,28,86)
+150 Data connection accepted from 192.168.0.114:1140; transfer starting for Music.mp3 (4980924 bytes).

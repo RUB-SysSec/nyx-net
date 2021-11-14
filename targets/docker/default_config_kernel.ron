@@ -1,0 +1,24 @@
+  #![enable(implicit_some)]
+  (
+      runner: QemuKernel((
+        qemu_binary: "../../qemu-nyx/x86_64-softmmu/qemu-system-x86_64",
+        kernel: "./bzImage-linux-4.15-rc7",
+        ramfs: "./init.cpio.gz",
+        debug: false,
+      )),
+      fuzz: (
+          workdir_path: "/tmp/workdir",
+          bitmap_size: 65536,
+          mem_limit: 512,
+          time_limit: (
+              secs: 0,
+              nanos: 80000000,
+          ),
+          threads: 1,
+          thread_id: 0,
+          cpu_pin_start_at: 0,
+          snapshot_placement: none,
+          seed_pattern: "",
+          dict: []
+      ),
+  )

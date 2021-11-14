@@ -1,0 +1,10 @@
+*/build/bytecode_spec.h
+*/build/data_include.h
+*/build/interpreter.h
+*/raw_streams/*.bin
+*/pcaps/*.bin
+*/nyx_net_spec.msgp
+ftp/lightftpd/*.bin
+ftp/proftpd/*.bin
+ftp/pure-ftpd/*.bin
+*/libnyx.so

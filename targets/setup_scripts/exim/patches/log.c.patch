@@ -1,0 +1,20 @@
+--- a/src/src/log.c
++++ b/src/src/log.c
+@@ -1000,7 +1000,7 @@ if (  flags & LOG_MAIN
+     operation. This happens at midnight, at which point we want to roll over
+     the file. Closing it has the desired effect. */
+ 
+-    if (mainlog_datestamp != NULL)
++    if (mainlog_datestamp != NULL && 0)
+       {
+       uschar *nowstamp = tod_stamp(string_datestamp_type);
+       if (Ustrncmp (mainlog_datestamp, nowstamp, Ustrlen(nowstamp)) != 0)
+@@ -1118,7 +1118,7 @@ if ((flags & LOG_REJECT) != 0)
+     {
+     struct stat statbuf;
+ 
+-    if (rejectlog_datestamp != NULL)
++    if (rejectlog_datestamp != NULL && 0)
+       {
+       uschar *nowstamp = tod_stamp(string_datestamp_type);
+       if (Ustrncmp (rejectlog_datestamp, nowstamp, Ustrlen(nowstamp)) != 0)
