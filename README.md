@@ -4,7 +4,8 @@
 
 Nyx-Net is fast full-VM snapshot fuzzer for complex network based targets. It's built upon [kAFL](https://github.com/RUB-SysSec/kAFL), [Redqueen](https://github.com/RUB-SysSec/redqueen) and [Nyx](https://github.com/RUB-SysSec/nyx). The approach is described in more detail in our [paper](https://arxiv.org/pdf/2111.03013.pdf).
 
-Nyx-Net is based on the [Nyx framework](https://github.com/nyx-fuzz/nyx).
+# Note:
+This repository is serving only to capture the state as described in the paper. If you want to actually use Nyx, check out the maintained code released for the [Nyx framework](https://github.com/nyx-fuzz/nyx) or it's [Homepage](https://nyx-fuzz.com). 
 
 ```
 @misc{nyxnet,
