@@ -1,16 +1,16 @@
 [submodule "profuzzbench-nyx"]
 	path = profuzzbench-nyx
-	url = git@github.com:RUB-SysSec/nyx-net-profuzzbench
+	url = https://github.com/RUB-SysSec/nyx-net-profuzzbench
 [submodule "qemu-nyx"]
 	path = qemu-nyx
-	url = git@github.com:nyx-fuzz/QEMU-Nyx.git
+	url = https://github.com/nyx-fuzz/QEMU-Nyx.git
 	branch = qemu-nyx-4.2.0
 [submodule "fuzzer"]
 	path = fuzzer
-	url = git@github.com:nyx-fuzz/spec-fuzzer.git
+	url = https://github.com/nyx-fuzz/spec-fuzzer.git
 [submodule "libxdc"]
 	path = libxdc
 	url = https://github.com/nyx-fuzz/libxdc.git
 [submodule "packer"]
 	path = packer
-	url = git@github.com:nyx-fuzz/packer.git
+	url = https://github.com/nyx-fuzz/packer.git
