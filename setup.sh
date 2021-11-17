@@ -19,15 +19,8 @@ echo "[?] Checking NYX-Net fuzzer ..."
 if [ ! -f "fuzzer/rust_fuzzer/target/release/rust_fuzzer" ]; then
 	echo "[*] Compiling NYX-Net fuzzer ..."
 	cd fuzzer/
-	git submodule init
-	git submodule update
-	cd -
-	cd fuzzer/rust_fuzzer
-	cargo build --release
-	cd -
-	cd fuzzer/rust_fuzzer_debug
-        cargo build --release
-        cd -
+	./setup.sh
+	cd ..
 fi
 
 echo "[*] Compiling AFL clang compiler ..."
