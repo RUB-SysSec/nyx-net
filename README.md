@@ -1,6 +1,6 @@
 # Nyx-Net: Network Fuzzing with Incremental Snapshots
 
-<a href="https://arxiv.org/abs/2111.03013"> <img align="right" width="200"  src="paper.png"> </a>
+<a href="https://doi.org/10.1145/3492321.3519591"> <img align="right" width="200"  src="paper.png"> </a>
 
 Nyx-Net is fast full-VM snapshot fuzzer for complex network based targets. It's built upon [kAFL](https://github.com/RUB-SysSec/kAFL), [Redqueen](https://github.com/RUB-SysSec/redqueen) and [Nyx](https://github.com/RUB-SysSec/nyx). The approach is described in more detail in our [paper](https://arxiv.org/pdf/2111.03013.pdf).
 
@@ -8,13 +8,12 @@ Nyx-Net is fast full-VM snapshot fuzzer for complex network based targets. It's 
 This repository is serving only to capture the state as described in the paper. If you want to actually use Nyx, check out the maintained code released for the [Nyx framework](https://github.com/nyx-fuzz/nyx) or it's [Homepage](https://nyx-fuzz.com). 
 
 ```
-@misc{nyxnet,
-      title={Nyx-Net: Network Fuzzing with Incremental Snapshots}, 
-      author={Sergej Schumilo and Cornelius Aschermann and Andrea Jemmett and Ali Abbasi and Thorsten Holz},
-      year={2021},
-      eprint={2111.03013},
-      archivePrefix={arXiv},
-      primaryClass={cs.CR}
+@inproceedings{nyx-net,
+author = {Schumilo, Sergej and Aschermann, Cornelius and Jemmett, Andrea and Abbasi, Ali and Holz, Thorsten}, 
+title = {Nyx-Net: Network Fuzzing with Incremental Snapshots}, 
+booktitle = {Proceedings of the Seventeenth European Conference on Computer Systems}, 
+series = {EuroSys '22} 
+year = {2022},
 }
 ```
 
