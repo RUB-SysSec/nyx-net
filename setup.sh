@@ -25,7 +25,9 @@ fi
 
 echo "[*] Compiling AFL clang compiler ..."
 cd packer/packer/compiler
-make
+# https://issuehint.com/issue/aflnet/aflnet/81
+# llvm should be <= 12
+LLVM_CONFIG=llvm-config-10 CC=clang-10 CXX=clang++-10 make
 cd -
 
 echo "[*] Preparing Initramfs..."
