@@ -1,5 +1,23 @@
 import sys, os 
 sys.path.insert(1, os.getenv("NYX_INTERPRETER_BUILD_PATH"))
+sys.path.insert(1, os.getenv("TANGO_PATH"))
+
+from tango.net import PCAPInput
+from tango.core import TransmitInstruction
+
+class FMT(object):
+    def __init__(self):
+        self.protocol = 'tcp'
+        self.port = 2022
+
+
+def to_pcap(aflnet_raw_pathname, inp):
+    pathname = aflnet_raw_pathname + '.tpcap'
+    new_inp = PCAPInput(file=pathname, fmt=FMT())
+    import ipdb; ipdb.set_trace()
+    new_inp.dump(inp, name='openssh-seed-0')
+    print('dump to {}'.format(pathname))
+
 
 from spec_lib.graph_spec import *
 from spec_lib.data_spec import *
@@ -59,7 +77,7 @@ def split_packets(data):
     i = 0
     res = []
 
-    print(type(data))
+    # print(type(data))
     header_end = data.find("\x0d\x0a".encode(), 0, len(data)) + 2
     res.append(["ssh-string", data[:header_end] ])
 
@@ -69,18 +87,20 @@ def split_packets(data):
         length,pad_length,msg = struct.unpack(">IBB",data[i:i+6])  
         content_len = length-2+6
         if not (msg >= 20 and msg <= 49):
-            print("add MAC length")
+            # print("add MAC length")
             pkt = data[i:i+content_len+8]
-            print(f"disecting: {repr((length,pad_length,msg,pkt))}" )
+            # print(f"disecting: {repr((length,pad_length,msg,pkt))}" )
             res.append( ["ssh-pkt-mac", pkt] )
             i+=(content_len+8)
         else:
-            print("no MAC")
+            # print("no MAC")
             pkt = data[i:i+content_len]
-            print(f"disecting: {repr((length,pad_length,msg,pkt))}" )
+            # print(f"disecting: {repr((length,pad_length,msg,pkt))}" )
             res.append( ["ssh-pkt", pkt] )
             i+=(content_len)
     return res
+
+instructions = []
 
 def stream_to_bin(path,stream):
     nodes = split_packets(stream)
@@ -88,12 +108,19 @@ def stream_to_bin(path,stream):
     for (ntype, content) in nodes:
         if ntype == "ssh-pkt":
             b.packet(content)
+            ins = TransmitInstruction(content)
+            instructions.append(ins)
         elif ntype == "ssh-pkt-mac":
             b.packet_mac(content)
+            ins = TransmitInstruction(content)
+            instructions.append(ins)
         elif ntype == "ssh-string":
             b.string(content)
+            ins = TransmitInstruction(content)
+            instructions.append(ins)
     b.write_to_file(path+".bin")
 
+"""
 # convert existing pcaps
 for path in glob.glob("pcaps/*.pcap"):
     b = Builder(s)
@@ -107,9 +134,13 @@ for path in glob.glob("pcaps/*.pcap"):
             stream+=pkt.tcp.payload.binary_value
     stream_to_bin(path, stream)
     cap.close()
+"""
 
 # convert afl net samples
 for path in glob.glob("raw_streams/*.raw"):
     b = Builder(s)
     with open(path,mode='rb') as f:
+        instructions.clear()
         stream_to_bin(path, f.read())
+        to_pcap(path, instructions)
+
