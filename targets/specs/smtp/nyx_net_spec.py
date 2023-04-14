@@ -1,5 +1,23 @@
 import sys, os 
 sys.path.insert(1, os.getenv("NYX_INTERPRETER_BUILD_PATH"))
+sys.path.insert(1, os.getenv("TANGO_PATH"))
+
+from tango.net import PCAPInput
+from tango.core import TransmitInstruction
+
+class FMT(object):
+    def __init__(self):
+        self.protocol = 'tcp'
+        self.port = 2025
+
+
+def to_pcap(aflnet_raw_pathname, inp):
+    pathname = aflnet_raw_pathname + '.pcap'
+    new_inp = PCAPInput(file=pathname, fmt=FMT())
+    new_inp.dumpi(inp)
+    print('dump to {}'.format(pathname))
+    new_inp._file.close()
+
 
 from spec_lib.graph_spec import *
 from spec_lib.data_spec import *
@@ -64,16 +82,21 @@ def split_packets(data):
 
     return(new_msgs[:-1])
 
+instructions = []
+
 def stream_to_bin(path,stream):
     if stream == None:
         return
     nodes = split_packets(stream)
-    print(nodes)
+    # print(nodes)
     for content in nodes:
-        print(repr(content))
+        # print(repr(content))
         b.packet_raw(content)
+        ins = TransmitInstruction(content)
+        instructions.append(ins)
     b.write_to_file(path+".bin")
 
+"""
 for path in glob.glob("pcaps/*.pcap"):
     b = Builder(s)
     raise("FIX PORT")
@@ -87,8 +110,11 @@ for path in glob.glob("pcaps/*.pcap"):
             stream+=pkt.tcp.payload.binary_value
         stream_to_bin(path, stream)
     cap.close()
+"""
 
 for path in glob.glob("raw_streams/*.raw"):
     b = Builder(s)
     with open(path,mode='rb') as f:
+        instructions.clear()
         stream_to_bin(path, f.read())
+        to_pcap(path, instructions)
