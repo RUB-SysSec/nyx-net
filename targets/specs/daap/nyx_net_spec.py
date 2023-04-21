@@ -1,4 +1,4 @@
-import sys, os
+import sys, os 
 sys.path.insert(1, os.getenv("NYX_INTERPRETER_BUILD_PATH"))
 
 from spec_lib.graph_spec import *
@@ -15,12 +15,12 @@ s.includes.append("\"nyx.h\"")
 s.interpreter_user_data_type = "socket_state_t*"
 
 with open("send_code.include.c") as f:
-    send_code = f.read()
+    send_code = f.read() 
 
 with open("send_code_raw.include.c") as f:
-    send_code_raw = f.read()
+    send_code_raw = f.read() 
 
-d_byte = s.data_u8("u8", generators=[limits(0x00, 0xff)])
+d_byte = s.data_u8("u8", generators=[limits(0x20, 0x7f)])
 
 
 method="(USER|QUIT|NOOP|PWD|TYPE|PORT|LIST|CDUP|CWD|RETR|ABOR|DELE|PASV|PASS|REST|SIZE|MKD|RMD|STOR|SYST|FEAT|APPE|RNFR|RNTO|OPTS|MLSD|AUTH|PBSZ|PROT|EPSV|HELP|SITE)"
@@ -30,7 +30,7 @@ args="( %s)* %s"%(arg,arg)
 
 pkt = method+args
 
-d_bytes = s.data_vec("pkt_content", d_byte, size_range=(0,1<<12), generators=[]) #regex(pkt)])
+d_bytes = s.data_vec("pkt_content", d_byte, size_range=(0,1<<12), generators=[]) #regex(pkt)]) 
 
 n_pkt = s.node_type("packet", interact=True, data=d_bytes, code=send_code)
 #n_pkt = s.node_type("packet_raw", interact=True, data=d_bytes, code=send_code_raw)
@@ -52,7 +52,7 @@ with open("nyx_net_spec.msgp","wb") as f:
     f.write(msgpack.packb(serialized_spec))
 
 
-def split_packets(data):
+def split_packets(data):    
         return [["sip_packet", d] for d in data.split(b"\r\n\r\n")][:-1]
 
 import pyshark
