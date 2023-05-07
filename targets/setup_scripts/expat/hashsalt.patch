@@ -1,0 +1,12 @@
+diff --git a/expat/xmlwf/xmlwf.c b/expat/xmlwf/xmlwf.c
+index 7fba67d9..cdf92d3e 100644
+@@ -1119,6 +1120,9 @@ tmain(int argc, XML_Char **argv) {
+       exit(XMLWF_EXIT_INTERNAL_ERROR);
+     }
+ 
++    // set static hash salt for reproducibility
++    XML_SetHashSalt(parser, 0xdeadbeef);
++
+     if (attackMaximumAmplification != -1.0f) {
+ #ifdef XML_DTD
+       XML_SetBillionLaughsAttackProtectionMaximumAmplification(

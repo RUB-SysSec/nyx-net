@@ -1,0 +1,17 @@
+
+  #![enable(implicit_some)]
+  (
+      include_default_config_path: "../default_config_kernel.ron",
+      runner: QemuKernel((
+          //debug: false,
+      )),
+      fuzz: (
+          workdir_path: "/tmp/workdir",
+            mem_limit: 512,
+            //snapshot_placement: none,
+            seed_path: "seeds/",
+            dict: [
+            ],
+          ),
+  )
+
